@@ -5,10 +5,11 @@
 
 ## Setup for local development
 
-### Installing dependencies
-
 ```bash
-pip install -r requirements.txt
+pip3 install virtualenv
+virtualenv --system-site-packages venv
+source venv/bin/activate
+pip3 install -r requirements.txt
 ```
 
 ## Packaging and deployment into AWS Lambda
