@@ -114,7 +114,7 @@ def tag_validator(required_tags, csv_width, valid_values):
     s3 = boto3.resource('s3')
     sns = boto3.client('sns')
 
-    report_bucket_name = 'tagreporterbucket'
+    report_bucket_name = os.environ['S3_BUCKET']
     csv_file_key_out = 'out/tag-report.csv'
     txt_file_key_out = 'out/wrong-tags.txt'
     txt_str_out = ''
@@ -171,7 +171,7 @@ def tag_report_generator(tags_list, required_tags, csv_width):
 
     print('*** Generating tag report...')
 
-    report_bucket_name = 'tagreporterbucket'
+    report_bucket_name = os.environ['S3_BUCKET']
     csv_delimiter = ','
     csv_newline = "\r\n"
 

@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    tag-checker
+
+    SAM Template for tag-checker
+    
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+    Function:
+        Timeout: 300
+        Runtime: python3.6
+
+Resources:
+
+    TagCheckerFunction:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            CodeUri: s3://tag-checker/src/tag-checker.zip
+            Handler: tag-checker.lambda_handler
+            Policies:
+             - AWSLambdaExecute # Managed Policy
+             - Version: '2012-10-17' # Policy Document
+               Statement: # Must be adjusted for any custom environment
+                 - Effect: Allow
+                   Action: '*'
+                   Resource: '*'
+            Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+                Variables:
+                    REQUIRED_TAGS: "{'1': 'Environment', '2': 'Application', '3': 'Product'}"
+                    SNS_ARN:
+                    S3_BUCKET: "tag-checker"
+                    VALID_VALUES: "{'Environment': ['Production', 'Staging'], 'Application': ['Api', 'Api2'], 'Product': ['Neo']}"
+            Events:
+              TagReportepTimer:
+                Type: Schedule
+                Properties:
+                  Schedule: rate(1 day)
+
+Outputs:
+    TagReportepProdFunction:
+      Description: "tag-checker-arn"
+      Value: !GetAtt TagCheckerFunction.Arn
