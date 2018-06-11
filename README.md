@@ -3,7 +3,7 @@
 * AWS CLI already configured with at least PowerUser permission
 * [Python 3 installed](https://www.python.org/downloads/)
 
-## Setup process
+## Setup for local development
 
 ### Installing dependencies
 
@@ -11,7 +11,7 @@
 pip install -r requirements.txt
 ```
 
-## Packaging and deployment
+## Packaging and deployment into AWS Lambda
 
 ```bash
 aws s3 mb s3://tag-checker
