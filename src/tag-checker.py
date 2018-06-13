@@ -1,6 +1,5 @@
 import os
 import boto3
-import json
 import botocore
 from time import sleep
 
@@ -37,7 +36,7 @@ def tag_setter_resourcegroupstaggingapi(required_tags, csv_width):
     s3 = boto3.resource('s3')
     client = boto3.client('resourcegroupstaggingapi')
 
-    report_bucket_name = str(os.environ['S3_BUCKET'])
+    report_bucket_name = os.environ['S3_BUCKET']
     csv_file_key_in = 'in/tag-report.csv'
     csv_file_key_out = 'out/tag-report.csv'
     csv_str_in = ''
@@ -91,7 +90,7 @@ def tag_setter_resourcegroupstaggingapi(required_tags, csv_width):
 def tag_validator(required_tags, csv_width, valid_values):
     s3 = boto3.resource('s3')
 
-    report_bucket_name = str(os.environ['S3_BUCKET'])
+    report_bucket_name = os.environ['S3_BUCKET']
     csv_file_key_out = 'out/tag-report.csv'
     txt_file_key_out = 'out/wrong-tags.txt'
     txt_str_out = ''
@@ -119,7 +118,7 @@ def tag_validator(required_tags, csv_width, valid_values):
             for row_position in range(1, csv_width):
                 c_name = required_tags[str(row_position)]
                 c_value = row_fields_out[row_position]
-                if c_value not in valid_values[c_name]:
+                if c_value not in valid_values[c_name] and c_name in valid_values:
                     txt_str_out = txt_str_out + 'Wrong tag: ' + c_name + ':' + c_value + ' in ' + arn_out + txt_newline
                     counters['tag'] += 1
 
@@ -193,8 +192,8 @@ def tag_report_generator(tags_list, required_tags, csv_width):
 
 def lambda_handler(event, context):
 
-    required_tags = json.loads(str(os.environ['REQUIRED_TAGS']))
-    valid_values = json.loads(str(os.environ['VALID_VALUES']))
+    required_tags = {"1": "Name", "2": "Environment", "3": "Application"}
+    valid_values = {'Environment': ['Production', 'Staging', 'Development']}
     csv_width = len(required_tags) + 1  # One extra field for ARN column
 
     try:
