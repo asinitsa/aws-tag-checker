@@ -7,13 +7,20 @@
 
 ```bash
 pip3 install virtualenv
+
 virtualenv --system-site-packages venv
+
 source venv/bin/activate
-pip3 install -r requirements.txt
+
+ppip3 install -r requirements.txt
 ```
 
 ## Packaging and deployment into AWS Lambda
 
+[AWS Serverless Application Model (SAM)](https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md)
+ 
+[AWS Serverless Application Model (SAM) HOWTO Guide](https://github.com/awslabs/serverless-application-model/blob/master/HOWTO.md)
+ 
 ```bash
 aws s3 mb s3://tag-checker
 ```
@@ -27,7 +34,5 @@ cd src && zip tag-checker.zip  * && aws s3 cp tag-checker.zip s3://tag-checker/s
 The following command will create a Cloudformation Stack and deploy your SAM resources.
 
 ```bash
-sam deploy --template-file tag-checker.yaml --stack-name tag-checker
+aws cloudformation deploy --template-file tag-checker.yaml --stack-name tag-checker --capabilities CAPABILITY_IAM
 ```
-
-> **See [Serverless Application Model (SAM) HOWTO Guide](https://github.com/awslabs/serverless-application-model/blob/master/HOWTO.md) for more details in how to get started.**

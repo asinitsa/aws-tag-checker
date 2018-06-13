@@ -27,10 +27,9 @@ Resources:
                    Resource: '*'
             Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
                 Variables:
-                    REQUIRED_TAGS: "{'1': 'Environment', '2': 'Application', '3': 'Product'}"
-                    SNS_ARN:
-                    S3_BUCKET: "tag-checker"
-                    VALID_VALUES: "{'Environment': ['Production', 'Staging'], 'Application': ['Api', 'Api2'], 'Product': ['Neo']}"
+                    REQUIRED_TAGS: '{ "1": "Environment", "2": "Application", "3": "Product" }'
+                    S3_BUCKET: 'tag-checker'
+                    VALID_VALUES: '{ "Environment": ["Production", "Staging"], "Application": ["Api", "Api2"], "Product": ["Neo"]}'
             Events:
               TagReportepTimer:
                 Type: Schedule

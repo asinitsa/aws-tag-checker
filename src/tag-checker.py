@@ -4,29 +4,6 @@ import json
 import botocore
 
 
-def tag_collector_lambda():
-    func_tags = [{'ExtractedARN': 'arn:blah-blah', 'Key1': 'Value1', 'Key2': 'Value2'}]
-
-    client = boto3.client('lambda')
-    paginator = client.get_paginator('list_functions')
-    response_iterator = paginator.paginate(
-        PaginationConfig={
-            'MaxItems': 10000,
-            'PageSize': 50
-        })
-
-    for response in response_iterator:
-        functions = response['Functions']
-        for f in functions:
-            f_arn = str(f['FunctionArn'])
-            tags_response = client.list_tags(Resource=f_arn)
-            f_tags = tags_response['Tags']
-            f_tags['ExtractedARN'] = f_arn
-            func_tags.append(f_tags)
-
-    return func_tags
-
-
 def tag_collector_resourcegroupstaggingapi():
     res_tags = [{'ExtractedARN': 'fake:arn:blah-blah', 'Key1': 'Value1', 'Key2': 'Value2'}]
 
@@ -112,15 +89,13 @@ def tag_setter_resourcegroupstaggingapi(required_tags, csv_width):
 
 def tag_validator(required_tags, csv_width, valid_values):
     s3 = boto3.resource('s3')
-    sns = boto3.client('sns')
 
-    report_bucket_name = os.environ['S3_BUCKET']
+    report_bucket_name = str(os.environ['S3_BUCKET'])
     csv_file_key_out = 'out/tag-report.csv'
     txt_file_key_out = 'out/wrong-tags.txt'
     txt_str_out = ''
     csv_str_out = ''
     txt_newline = "\r\n"
-    sns_arn = os.environ['SNS_ARN']
 
     counters = {'arn': 0, 'tag': 0}
 
@@ -155,14 +130,6 @@ def tag_validator(required_tags, csv_width, valid_values):
         Body=txt_str_out
     )
     print('*** S3 response: ' + str(s3_resp))
-
-    if len(txt_str_out) > 0:
-        sns_resp = sns.publish(
-            TargetArn=sns_arn,
-            Message=json.dumps({'default': 'Tags are not set properly'}),
-            MessageStructure='json'
-        )
-        print('*** SNS response: ' + str(sns_resp))
 
     return counters
 
@@ -225,11 +192,8 @@ def tag_report_generator(tags_list, required_tags, csv_width):
 
 def lambda_handler(event, context):
 
-    required_tags = os.environ['REQUIRED_TAGS']
-    valid_values = os.environ['VALID_VALUES']
-    #required_tags = {'1': 'Environment', '2': 'Application', '3': 'Product'}
-    #valid_values = {'Environment': ['Production', 'Staging'], 'Application': ['Api', 'Api2'], 'Product': ['Neo']}
-
+    required_tags = json.loads(str(os.environ['REQUIRED_TAGS']))
+    valid_values = json.loads(str(os.environ['VALID_VALUES']))
     csv_width = len(required_tags) + 1  # One extra field for ARN column
 
     try:
