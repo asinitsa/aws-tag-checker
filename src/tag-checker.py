@@ -36,7 +36,7 @@ def tag_setter_resourcegroupstaggingapi(required_tags, csv_width):
     s3 = boto3.resource('s3')
     client = boto3.client('resourcegroupstaggingapi')
 
-    report_bucket_name = 'tagreporterbucket'
+    report_bucket_name = str(os.environ['S3_BUCKET'])
     csv_file_key_in = 'in/tag-report.csv'
     csv_file_key_out = 'out/tag-report.csv'
     csv_str_in = ''
