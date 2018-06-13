@@ -2,6 +2,7 @@ import os
 import boto3
 import json
 import botocore
+from time import sleep
 
 
 def tag_collector_resourcegroupstaggingapi():
@@ -82,6 +83,7 @@ def tag_setter_resourcegroupstaggingapi(required_tags, csv_width):
                             }
                         )
                         counters['tag'] += 1
+                        sleep(0.05)
                         print(response)
     return counters
 
