@@ -18,11 +18,10 @@ Resources:
         Properties:
             CodeUri: s3://tag-checker/src/tag-checker.zip
             Handler: tag-checker.lambda_handler
-            Policies: # Must be adjusted for any custom environment
+            Policies:
              - AWSLambdaBasicExecutionRole # Managed Policy
              - AWSLambdaExecute
-             - AmazonS3FullAccess
-             - ResourceGroupsandTagEditorFullAccess
+             - PowerUserAccess # Must be adjusted for production environment
             Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
                 Variables:
                     S3_BUCKET: 'tag-checker'

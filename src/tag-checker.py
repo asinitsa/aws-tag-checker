@@ -83,7 +83,6 @@ def tag_setter_resourcegroupstaggingapi(required_tags, csv_width):
                         )
                         counters['tag'] += 1
                         print(response)
-
     return counters
 
 
