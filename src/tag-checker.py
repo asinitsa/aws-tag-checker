@@ -118,7 +118,7 @@ def tag_validator(required_tags, csv_width, valid_values):
             for row_position in range(1, csv_width):
                 c_name = required_tags[str(row_position)]
                 c_value = row_fields_out[row_position]
-                if c_value not in valid_values[c_name] and c_name in valid_values:
+                if c_name in valid_values and c_value not in valid_values[c_name]:
                     txt_str_out = txt_str_out + 'Wrong tag: ' + c_name + ':' + c_value + ' in ' + arn_out + txt_newline
                     counters['tag'] += 1
 
