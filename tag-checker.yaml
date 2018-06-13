@@ -20,8 +20,8 @@ Resources:
             Environment:
                 Variables:
                     S3_BUCKET: 'tag-checker'
-                    VALID_VALUES: '{ "Environment": ["Production", "Staging"], "Application": ["Api", "Api2"], "Product": ["Neo"]}'
-                    REQUIRED_TAGS: '{ "1": "Environment", "2": "Application", "3": "Product" }'
+                    VALID_VALUES: '{ "Environment": ["Production", "Staging"], "Application": ["Api", "Api2"], "Product": ["Neo"], "Name": ["Any"] }'
+                    REQUIRED_TAGS: '{ "1": "Name", "2": "Environment", "3": "Application", "4": "Product" }'
             Events:
               TagReportepTimer:
                 Type: Schedule
