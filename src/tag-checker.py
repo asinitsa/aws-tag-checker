@@ -4,6 +4,7 @@ import botocore
 from time import sleep
 
 
+#
 def tag_collector_resourcegroupstaggingapi():
     res_tags = [{'ExtractedARN': 'fake:arn:blah-blah', 'Key1': 'Value1', 'Key2': 'Value2'}]
 
