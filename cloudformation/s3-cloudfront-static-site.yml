@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: 'S3 bucket and CloudFront distribution'
+
+Resources:
+  DemoS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+  DemoDistributionIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Demo
+  DemoDistribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn:
+    - DemoS3Bucket
+    - DemoDistributionIdentity
+    Properties:
+      DistributionConfig:
+        Comment: CloudFront Distribution pointing to S3 bucket
+        Aliases:
+          -
+            Fn::Join:
+              - ''
+              - - !Ref DemoS3Bucket
+                - ".s3.amazonaws.com"
+        Enabled: true
+        Origins:
+          - DomainName:
+              Fn::Join:
+                - ''
+                - - !Ref DemoS3Bucket
+                  - ".s3.amazonaws.com"
+            Id: Origin01
+            S3OriginConfig:
+              OriginAccessIdentity:
+                Fn::Join:
+                  - ''
+                  - - "origin-access-identity/cloudfront/"
+                    - !Ref DemoDistributionIdentity
+        Restrictions:
+          GeoRestriction:
+            RestrictionType: none
+            Locations: []
+        HttpVersion: 'http2'
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          MaxTTL: 0
+          MinTTL: 0
+          DefaultTTL: 0
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          CachedMethods:
+            - GET
+            - HEAD
+          TargetOriginId: Origin01
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: 'true'
+Outputs:
+  DemoS3Bucket:
+    Value: !Ref DemoS3Bucket
+  DemoS3BucketDomainName:
+    Value: !Join ['', [ !GetAtt [DemoS3Bucket, DomainName]]]
+  DemoS3BucketWebsiteURL:
+    Value: !Join ['', [ !GetAtt [DemoS3Bucket, WebsiteURL]]]
+  DemoDistribution:
+    Value: !Ref DemoDistribution
+  DemoDistributionURL:
+    Value: !Join ['', [ 'https://', !GetAtt [DemoDistribution, DomainName]]]
