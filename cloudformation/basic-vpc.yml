@@ -5,31 +5,24 @@ Parameters:
     Default: 'us-west-2a, us-west-2b'
     Type: 'List<AWS::EC2::AvailabilityZone::Name>'
   PrivateSubnet1CIDR:
-    Default: 10.128.0.0/24
+    Default: 10.10.0.0/24
     Description: CIDR block for private subnet in Availability Zone 1 must be in the form x.x.x.x/20-24
     Type: String
   PrivateSubnet2CIDR:
-    Default: 10.128.1.0/24
+    Default: 10.10.1.0/24
     Description: CIDR block for private subnet in Availability Zone 2 must be in the form x.x.x.x/20-24
     Type: String
   PublicSubnet1CIDR:
-    Default: 10.128.2.0/24
+    Default: 10.10.2.0/24
     Description: CIDR block for public subnet in Availability Zone 1 must be in the form x.x.x.x/20-24
     Type: String
   PublicSubnet2CIDR:
-    Default: 10.128.3.0/24
+    Default: 10.10.3.0/24
     Description: CIDR block for public subnet in Availability Zone 2 must be in the form x.x.x.x/20-24
     Type: String
   VPCCIDR:
-    Default: 10.128.0.0/16
+    Default: 10.10.0.0/16
     Description: CIDR block for the VPC must be in the form x.x.x.x/16
-    Type: String
-  VPCTenancy:
-    AllowedValues:
-      - default
-      - dedicated
-    Default: default
-    Description: The allowed tenancy of instances launched into the VPC
     Type: String
 Conditions:
   NVirginiaRegionCondition: !Equals
@@ -52,7 +45,6 @@ Resources:
     Type: 'AWS::EC2::VPC'
     Properties:
       CidrBlock: !Ref VPCCIDR
-      InstanceTenancy: !Ref VPCTenancy
       EnableDnsSupport: 'true'
       EnableDnsHostnames: 'true'
       Tags:
@@ -232,50 +224,98 @@ Resources:
         - AllocationId
       SubnetId: !Ref PublicSubnet2
 
+### Security groups
+  SSHSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow ssh access
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+      Tags:
+        -
+          Key: "Name"
+          Value: "SSH"
+  WebSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http(s) access
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+      Tags:
+        -
+          Key: "Name"
+          Value: "Web"
+  VPCLocalSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow local traffic
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: "-1"
+        FromPort: '-1'
+        ToPort: '-1'
+        CidrIp: !Ref VPCCIDR
+      Tags:
+        -
+          Key: "Name"
+          Value: "VPCLocalTraffic"
+
 Outputs:
   PrivateSubnet1CIDR:
-    Description: Private subnet 1 CIDR in Availability Zone 1
+    Description: Private subnet NET in AZ 1
     Value: !Ref PrivateSubnet1CIDR
     Export:
       Name: !Sub '${AWS::StackName}-PrivateSubnet1CIDR'
   PrivateSubnet1ID:
-    Description: Private subnet 2 ID in Availability Zone 2
+    Description: Private subnet ID in AZ 1
     Value: !Ref PrivateSubnet1
     Export:
       Name: !Sub '${AWS::StackName}-PrivateSubnet1ID'
   PrivateSubnet2CIDR:
-    Description: Private subnet 1B CIDR in Availability Zone 2
+    Description: Private subnet NET in AZ 2
     Value: !Ref PrivateSubnet2CIDR
     Export:
       Name: !Sub '${AWS::StackName}-PrivateSubnet2CIDR'
   PrivateSubnet2ID:
-    Description: Private subnet 1B ID in Availability Zone 2
+    Description: Private subnet ID in AZ 2
     Value: !Ref PrivateSubnet2
     Export:
       Name: !Sub '${AWS::StackName}-PrivateSubnet2ID'
   PublicSubnet1CIDR:
-    Description: Public subnet 1 CIDR in Availability Zone 1
+    Description: Public subnet NET in AZ 1
     Value: !Ref PublicSubnet1CIDR
     Export:
       Name: !Sub '${AWS::StackName}-PublicSubnet1CIDR'
   PublicSubnet1ID:
-    Description: Public subnet 1 ID in Availability Zone 1
+    Description: Public subnet ID in AZ 1
     Value: !Ref PublicSubnet1
     Export:
       Name: !Sub '${AWS::StackName}-PublicSubnet1ID'
   PublicSubnet2CIDR:
-    Description: Public subnet 2 CIDR in Availability Zone 2
+    Description: Public subnet NET in AZ 2
     Value: !Ref PublicSubnet2CIDR
     Export:
       Name: !Sub '${AWS::StackName}-PublicSubnet2CIDR'
   PublicSubnet2ID:
-    Description: Public subnet 2 ID in Availability Zone 2
+    Description: Public subnet ID in AZ 2
     Value: !Ref PublicSubnet2
     Export:
       Name: !Sub '${AWS::StackName}-PublicSubnet2ID'
   VPCCIDR:
     Value: !Ref VPCCIDR
-    Description: VPC CIDR
+    Description: VPC NET
     Export:
       Name: !Sub '${AWS::StackName}-VPCCIDR'
   VPCID:
@@ -283,3 +323,18 @@ Outputs:
     Description: VPC ID
     Export:
       Name: !Sub '${AWS::StackName}-VPCID'
+  SSHSG:
+    Description: SSH SG
+    Value: !Ref SSHSG
+    Export:
+      Name: !Sub '${AWS::StackName}-SSHSG'
+  WebSG:
+    Description: Web SG
+    Value: !Ref WebSG
+    Export:
+      Name: !Sub '${AWS::StackName}-WebSG'
+  VPCLocalSG:
+    Description: VPC Local Traffic SG
+    Value: !Ref VPCLocalSG
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCLocalSG'
