@@ -17,10 +17,12 @@ def put_job_success(job):
     print('Putting job success')
     code_pipeline.put_job_success_result(jobId=job)
 
+
 def lambda_handler(event, context):
 
-
     user_parameters = "Test run"
+    job_id = "b896f0df-dbb7-4e50-83ef-6bcb80330863"  # fake
+
     if 'CodePipeline.job' in event:
         job_id = event['CodePipeline.job']['id']
         job_data = event['CodePipeline.job']['data']

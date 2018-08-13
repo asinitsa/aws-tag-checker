@@ -34,5 +34,5 @@ cd src && zip -r telegram-message.zip . && aws s3 cp telegram-message.zip s3://$
 The following command will create a Cloudformation Stack and deploy your SAM resources.
 
 ```bash
-aws cloudformation deploy --template-file tag-checker.yaml --stack-name tag-checker --capabilities CAPABILITY_IAM
+aws cloudformation deploy --template-file telegram-message.yaml --stack-name telegram-message --capabilities CAPABILITY_IAM
 ```
