@@ -24,14 +24,12 @@ source venv/bin/activate
 ```bash
 aws s3 mb s3://$CODEBUCKET
 ```
-
-The following command to package Lambda function to S3:
+Upload Lambda function code to S3:
 
 ```bash
 cd src && zip -r telegram-message.zip . && aws s3 cp telegram-message.zip s3://$CODEBUCKET/src/telegram-message.zip
 ```
-
-The following command will create a Cloudformation Stack and deploy your SAM resources.
+Create a Cloudformation Stack and deploy SAM resources.
 
 ```bash
 aws cloudformation deploy --template-file telegram-message.yaml --stack-name telegram-message --capabilities CAPABILITY_IAM
