@@ -1,6 +1,7 @@
 ## Requirements
 
-* AWS CLI already configured with at least PowerUser permission
+* [AWS CLI](https://aws.amazon.com/cli/) 
+* [PowerUser permission](https://console.aws.amazon.com/iam/home?#/policies/arn:aws:iam::aws:policy/PowerUserAccess$jsonEditor)
 * [Python 3 installed](https://www.python.org/downloads/)
 
 ## Setup for local development
@@ -12,7 +13,7 @@ virtualenv --system-site-packages venv
 
 source venv/bin/activate
 
-ppip3 install -r requirements.txt
+ pip install -r requirements.txt -t src/vendored
 ```
 
 ## Packaging and deployment into AWS Lambda
@@ -22,16 +23,16 @@ ppip3 install -r requirements.txt
 [AWS Serverless Application Model (SAM) HOWTO Guide](https://github.com/awslabs/serverless-application-model/blob/master/HOWTO.md)
  
 ```bash
-aws s3 mb s3://tag-checker
+aws s3 mb s3://CODEBUCKET
 ```
 
-The following command to package Lambda function to S3:
+Upload Lambda function code to S3:
 
 ```bash
 cd src && zip tag-checker.zip  * && aws s3 cp tag-checker.zip s3://tag-checker/src/tag-checker.zip
 ```
 
-The following command will create a Cloudformation Stack and deploy your SAM resources.
+Create a Cloudformation Stack and deploy SAM resources.
 
 ```bash
 aws cloudformation deploy --template-file tag-checker.yaml --stack-name tag-checker --capabilities CAPABILITY_IAM
