@@ -1,7 +1,7 @@
 ## Requirements
 
-* [AWS CLI] (https://aws.amazon.com/cli/) 
-* [PowerUser permission] (https://console.aws.amazon.com/iam/home?#/policies/arn:aws:iam::aws:policy/PowerUserAccess$jsonEditor)
+* [AWS CLI](https://aws.amazon.com/cli/) 
+* [PowerUser permission](https://console.aws.amazon.com/iam/home?#/policies/arn:aws:iam::aws:policy/PowerUserAccess$jsonEditor)
 * [Python 3 installed](https://www.python.org/downloads/)
 
 ## Setup for local development
