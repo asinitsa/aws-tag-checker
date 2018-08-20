@@ -24,11 +24,7 @@ Resources:
       DistributionConfig:
         Comment: CloudFront Distribution pointing to S3 bucket
         Aliases:
-          -
-            Fn::Join:
-              - ''
-              - - !Ref DemoS3Bucket
-                - ".s3.amazonaws.com"
+          - 'basic.example.com'
         Enabled: true
         Origins:
           - DomainName:
