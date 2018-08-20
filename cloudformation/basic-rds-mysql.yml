@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: 'RDS instance'
+
+Parameters:
+  DBInstanceClass:
+    Description: The database instance type
+    Type: String
+    Default: 'db.m4.large'
+
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'RDS Subnet group'
+      SubnetIds:
+      - Fn::ImportValue: !Sub 'vpc-PrivateSubnet1ID'
+      - Fn::ImportValue: !Sub 'vpc-PrivateSubnet2ID'
+
+  MasterDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: 'masterdb01'
+      DBName: 'rdssetup' # placeholder, never be used
+      AllocatedStorage: '50'
+      DBInstanceClass: !Ref 'DBInstanceClass'
+      Engine: MySQL
+      EngineVersion: '5.7.16'
+      MasterUsername: 'root'
+      MasterUserPassword: 'changeme'
+      MultiAZ: 'false'
+      AvailabilityZone: "{{ aws_az_1 }}"
+      PubliclyAccessible: 'true'
+      StorageType: 'gp2'
+      DBSubnetGroupName: !Ref 'DBSubnetGroup'
+      VPCSecurityGroups:
+      - Fn::ImportValue: !Sub 'vpc-VPCLocalTrafficSecurityGroup'
+      Tags:
+      - Key: Name
+        Value: MasterDatabase
+
+Outputs:
+  FMasterDB:
+    Value: !Ref MasterDB
+    Description: FMasterDB
+    Export:
+      Name: !Sub '${AWS::StackName}-FMasterDB'
+  FMasterDBAddress:
+    Value: !Join ['', [ !GetAtt [MasterDB, Endpoint.Address]]]
+    Description: FMasterDBAddress
+    Export:
+      Name: !Sub '${AWS::StackName}-FMasterDBAddress'
+  FMasterDBPort:
+    Value: !Join ['', [ !GetAtt [MasterDB, Endpoint.Port]]]
+    Description: FMasterDBPort
+    Export:
+      Name: !Sub '${AWS::StackName}-FMasterDBPort'
