@@ -1,0 +1,331 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: 'us-west-2a'
+      containers:
+        - name: elasticsearch
+          image: 'docker.elastic.co/elasticsearch/elasticsearch:7.1.1'
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9200
+            - containerPort: 9300
+          livenessProbe:
+            httpGet:
+              path: /_cluster/health?local=true
+              port: 9200
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: es-data01
+              mountPath: /usr/share/elasticsearch/data
+            - name: elasticsearch-config-volume
+              mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+              subPath: elasticsearch.yml
+              readOnly: true
+          env:
+            - name: ES_JAVA_OPTS
+              valueFrom:
+                configMapKeyRef:
+                  name: elasticsearch-config
+                  key: ES_JAVA_OPTS
+      initContainers:
+        - name: es-data01-permission-fix
+          image: 'gcr.io/google-containers/busybox'
+          command: ["/bin/chmod","-R","777", "/data"]
+          volumeMounts:
+            - name: es-data01
+              mountPath: /data
+      volumes:
+        - name: elasticsearch-config-volume
+          configMap:
+            name: elasticsearch-config
+        - name: es-data01
+          awsElasticBlockStore:
+            volumeID: vol-0b4270815725b0a77 # This AWS EBS volume must already exist.
+            fsType: ext4
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-config
+data:
+  elasticsearch.yml: |
+    ---
+    cluster.name: "elk-cluster"
+    network.host: 0.0.0.0
+    discovery.zen.minimum_master_nodes: 1
+    discovery.type: single-node
+    xpack.security.enabled: false
+    xpack.monitoring.enabled: false
+    xpack.ml.enabled: false
+    xpack.graph.enabled: false
+    xpack.watcher.enabled: false
+  ES_JAVA_OPTS: -Xms512m -Xmx512m
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  labels:
+    app: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      initContainers:
+        - name: waiting-elasticsearch-service
+          image: 'gcr.io/google-containers/busybox'
+          command: ['sh', '-c', 'until nslookup elasticsearch; do echo waiting for elasticsearch-service; sleep 5; done;']
+      containers:
+        - name: kibana
+          image: 'docker.elastic.co/kibana/kibana:7.1.1'
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5601
+              name: http5601
+          livenessProbe:
+            tcpSocket:
+              port: 5601
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: kibana-config-volume
+              mountPath: /usr/share/logstash/config/kibana.yml
+              subPath: kibana.yml
+              readOnly: true
+      volumes:
+        - name: kibana-config-volume
+          configMap:
+            name: kibana-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kibana-config
+data:
+  kibana.yml: |
+    ---
+    server.name: kibana
+    server.host: "0"
+    elasticsearch.hosts: "http://elasticsearch:9200"
+
+    xpack.security.enabled: false
+    xpack.monitoring.enabled: false
+    xpack.ml.enabled: false
+    xpack.graph.enabled: false
+    xpack.reporting.enabled: false
+
+#   TODO: run in dedicated container when kibana is up and running
+#   curl -X POST "http://localhost:5601/api/saved_objects/index-pattern/filebeat-index" -H 'kbn-xsrf: true' -H 'Content-Type: application/json' -d @filebeat-index.json
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat
+spec:
+  selector:
+    matchLabels:
+      name: filebeat
+  template:
+    metadata:
+      labels:
+        name: filebeat
+        k8s-app: filebeat
+        kubernetes.io/cluster-service: "true"
+    spec:
+      serviceAccountName: filebeat
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+        - name: filebeat
+          image: 'docker.elastic.co/beats/filebeat:7.2.0'
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: dockersock
+              mountPath: /var/run/docker.sock
+            - name: containerlogs
+              mountPath: /var/lib/docker/containers
+            - name: filebeat-config-volume
+              mountPath: /usr/share/filebeat/filebeat.yml
+              subPath: filebeat.yml
+              readOnly: true
+      initContainers:
+        - name: dockersock-permission-fix
+          image: 'gcr.io/google-containers/busybox'
+          command: ["/bin/chmod","-R","777", "/var/run/docker.sock"]
+          volumeMounts:
+            - name: dockersock
+              mountPath: /var/run/docker.sock
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: dockersock
+          hostPath:
+            path: /var/run/docker.sock
+        - name: containerlogs
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: filebeat-config-volume
+          configMap:
+            name: filebeat-configmap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-configmap
+data:
+  filebeat.yml: |
+    ---
+    filebeat.autodiscover:
+      providers:
+        - type: kubernetes
+          templates:
+            - condition:
+                equals:
+                  kubernetes.namespace: prod
+              config:
+                - type: container
+                  enabled: true
+                  stream: all
+                  paths:
+                    - '/var/lib/docker/containers/*/*-json.log'
+                  containers.ids:
+                    - "${data.kubernetes.container.id}"
+                  exclude_lines: ["^\\s+[\\-`('.|_]"]  # drop asciiart lines
+                  multiline.pattern: '^[[:space:]]'
+                  multiline.negate: false
+                  multiline.match: after
+    processors:
+      - drop_event:
+          when.or:
+              - and:
+                  - regexp:
+                      message: '^\d+\.\d+\.\d+\.\d+ '
+                  - equals:
+                      fileset.name: error
+              - and:
+                  - not:
+                      regexp:
+                          message: '^\d+\.\d+\.\d+\.\d+ '
+                  - equals:
+                      fileset.name: access
+      - add_cloud_metadata:
+      - add_kubernetes_metadata:
+      - add_docker_metadata:
+
+    filebeat.inputs:
+
+    output.elasticsearch:
+        hosts: ["http://elasticsearch:9200"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+  - kind: ServiceAccount
+    name: filebeat
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+  - kind: ServiceAccount
+    name: filebeat
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: filebeat
+  labels:
+    k8s-app: filebeat
+rules:
+  - apiGroups: [""] # "" indicates the core API group
+    resources:
+      - namespaces
+      - pods
+    verbs:
+      - get
+      - watch
+      - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: kube-system
+  labels:
+    k8s-app: filebeat
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: default
+  labels:
+    k8s-app: filebeat
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9200
+      targetPort: 9200
+    - name: transport
+      protocol: TCP
+      port: 9300
+      targetPort: 9300
+  selector:
+    app: elasticsearch
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  labels:
+    app: kibana
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5601
+      targetPort: 5601
+  selector:
+    app: kibana

@@ -1,2 +1,2 @@
 # toolbox
-A bunch of scripts for AWS
+A bunch of scripts
