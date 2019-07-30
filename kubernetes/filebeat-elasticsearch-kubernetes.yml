@@ -54,7 +54,7 @@ spec:
           configMap:
             name: elasticsearch-config
         - name: es-data01
-          awsElasticBlockStore:
+          awsElasticBlockStore: # works only in EKS https://aws.amazon.com/eks/
             volumeID: vol-0b4270815725b0a77 # This AWS EBS volume must already exist.
             fsType: ext4
 ---
