@@ -1,0 +1,45 @@
+---
+- hosts: localhost
+  gather_facts: no
+  connection: local
+  tasks:
+    - name: whoami
+      command: whoami
+      register: whoami
+
+    - name: GET gitlab.rb file
+      aws_s3:
+        bucket:     ${ansible_bucket_id}
+        object:     gitlab.rb
+        dest:       /root/gitlab.rb
+        mode:       get
+        overwrite:  true
+
+    - name: Install related packages
+      apt:
+        pkg:
+          - curl
+          - openssh-server
+          - ca-certificates
+          - postfix
+
+    - name: Add gitlab repo
+      shell: curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh | sudo bash
+
+    - name: Install the version '12.9.2' of gitlab
+      apt:
+        name: gitlab-ee=12.9.2-ee.0
+
+    - name: Create a directory for gitlab configs
+      file:
+        path: /etc/gitlab/
+        state: directory
+        mode: '0755'
+
+    - name: Template a file to /etc/gitlab/gitlab.rb
+      template:
+        src:        /root/gitlab.rb
+        dest:       /etc/gitlab/gitlab.rb
+        owner:      root
+        group:      root
+        mode:       '0600'

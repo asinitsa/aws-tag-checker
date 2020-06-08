@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.2",
+  "description": "Bash commands",
+  "parameters": {
+  },
+  "runtimeConfig": {
+    "aws:runShellScript": {
+      "properties": [
+        {
+          "id": "0.aws:runShellScript",
+          "runCommand": ["${bash_string}"]
+        }
+      ]
+    }
+  }
+}
