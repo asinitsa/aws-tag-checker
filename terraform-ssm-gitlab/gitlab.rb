@@ -10,7 +10,7 @@ gitlab_rails['db_collation'] = nil
 gitlab_rails['db_database'] = "gitlab"
 gitlab_rails['db_pool'] = 1
 gitlab_rails['db_username'] = "gitlab"
-gitlab_rails['db_password'] = "FODOADSErta2qz"
+gitlab_rails['db_password'] = "gitlab"
 gitlab_rails['db_host'] = "${db_host}"
 gitlab_rails['db_port'] = 5432
 
